@@ -7,7 +7,7 @@ import { spawn } from 'node-pty';
 import json from './secrets/config.json' with { type: 'json' };
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url)),
-	PORT = process.env.PORT || 3000,
+	PORT = process.env.PORT || 5164,
 	app = express();
 
 expressWs(app); // enable websockets for the app
