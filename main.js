@@ -86,7 +86,7 @@ app.get('/logout', (req, res) => {
 // when a websocket is opened at /shell-ws, spawn a fish shell in a pty
 app.ws('/shell-ws', (ws, req) => {
 	// spawn a fish shell using node-pty with a pseudo-terminal
-	const shell = spawn('su', ['-', '/usr/bin/fish', '-s', 'fish'], {
+	const shell = spawn('su', ['-', 'ion606', '-s', 'fish'], {
 		cols: 80,
 		rows: 24,
 		cwd: process.env.HOME,
