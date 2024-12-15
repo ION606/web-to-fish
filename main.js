@@ -6,8 +6,6 @@ import expressWs from 'express-ws';
 import { spawn } from 'node-pty';
 import json from './secrets/config.json' with { type: 'json' };
 
-// TODO: add web portal mirroring integration
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
