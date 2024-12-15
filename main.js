@@ -6,13 +6,12 @@ import expressWs from 'express-ws';
 import { spawn } from 'node-pty';
 import json from './secrets/config.json' with { type: 'json' };
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const __dirname = path.dirname(fileURLToPath(import.meta.url)),
+	PORT = process.env.PORT || 3000,
+	app = express();
 
-const app = express();
 expressWs(app); // enable websockets for the app
 
-const PORT = 3000;
 
 // configure session
 app.use(session({
@@ -20,6 +19,7 @@ app.use(session({
 	resave: false,
 	saveUninitialized: false
 }));
+
 
 // parse form data
 app.use(express.urlencoded({ extended: true }));
@@ -36,10 +36,12 @@ function requireAuth(req, res, next) {
 	}
 }
 
+
 // serve login page
 app.get('/login', (req, res) => {
 	res.sendFile('login.html', { root: path.join(__dirname, 'HTML') });
 });
+
 
 // process login
 app.post('/login', (req, res) => {
@@ -74,10 +76,12 @@ app.post('/login', (req, res) => {
 	}
 });
 
+
 // shell interface
 app.get('/shell', requireAuth, (req, res) => {
 	res.sendFile('shell.html', { root: path.join(__dirname, 'HTML') });
 });
+
 
 // logout route
 app.get('/logout', (req, res) => {
@@ -85,6 +89,7 @@ app.get('/logout', (req, res) => {
 		res.redirect('/login');
 	});
 });
+
 
 // when a websocket is opened at /shell-ws, spawn a fish shell in a pty
 app.ws('/shell-ws', (ws, req) => {
@@ -110,4 +115,8 @@ app.ws('/shell-ws', (ws, req) => {
 	ws.on('close', () => shell.kill());
 });
 
-app.listen(PORT, () => console.log('server listening on http://localhost:' + PORT));
+
+app.get('/', (req, res) => res.end());
+
+
+app.listen(PORT, '0.0.0.0', () => console.log('server listening on http://localhost:' + PORT));

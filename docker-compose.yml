@@ -1,0 +1,11 @@
+services:
+  app:
+    build:
+      context: .
+    ports:
+      - "5164:3000"
+    volumes:
+      - ./secrets:/app/secrets
+    environment:
+      PORT: 3000
+      NODE_ENV: production
