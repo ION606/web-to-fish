@@ -4,6 +4,7 @@ import { fileURLToPath } from 'url';
 import session from 'express-session';
 import expressWs from 'express-ws';
 import { spawn } from 'node-pty';
+import linuxpam from 'node-linux-pam';
 import json from './secrets/config.json' with { type: 'json' };
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url)),
@@ -43,39 +44,37 @@ app.get('/login', (req, res) => {
 });
 
 
-// process login
-app.post('/login', (req, res) => {
+app.post('/login', async (req, res) => {
 	try {
 		const username = req.body.username;
 		const password = req.body.password;
 
-		if (!username) return res.sendStatus(404);
-		else if (!password) return res.sendStatus(401);
+		// validate input
+		if (!username) return res.status(400).send('Username is required');
+		if (!password) return res.status(400).send('Password is required');
 
-		const shell = spawn('su', [`${username}`], {
-			cwd: process.env.HOME,
-			env: process.env
-		});
-
-		req.on('end', () => shell.kill());
-
-		shell.onData((data) => {
-			if (data?.toLowerCase().trim() === 'password:') shell.write(password + '\n');
-			else if (data.includes('does not exist')) res.sendStatus(404);
-			else if (data.includes('Authentication failure')) res.sendStatus(401);
-			else if (data.includes('Welcome to fish')) {
+		// authenticate using PAM
+		linuxpam.pamAuthenticate({
+			username,
+			password,
+			serviceName: 'login',
+		}, (err, success) => {
+			console.log(err);
+			if (err.message.includes('User not known')) res.sendStatus(404);
+			else if (err.message.includes('Authentication failure')) res.sendStatus(401);
+			else if (success) {
 				req.session.authenticated = true;
-				res.redirect('/shell');
-				shell.kill();
+				req.session.username = username;
+				return res.redirect('/shell');
 			}
-			else if (data.match(/\[\w+@\w+ \w+\]\$ ?/)) shell.write('fish\n');
-			else console.error(`unknown terminal output:\n"${data}"`);
+			else console.error("what?", err, success);
 		});
-	}
-	catch (err) {
+	} catch (err) {
 		console.error(err);
+		res.status(500).send('Internal server error');
 	}
 });
+
 
 
 // shell interface
