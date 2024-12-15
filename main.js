@@ -1,7 +1,3 @@
-// file: index.js
-// run: node index.js
-// then open http://localhost:3000 in your browser
-
 import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -9,8 +5,8 @@ import session from 'express-session';
 import expressWs from 'express-ws';
 import { spawn } from 'node-pty';
 import json from './secrets/config.json' with { type: 'json' };
-import stripAnsi from 'strip-ansi';
 
+// TODO: add web portal mirroring integration
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -32,9 +28,6 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json({ extended: true }));
 app.use('/node_modules', express.static('node_modules'));
 
-// simple hard-coded credentials (for demonstration)
-const validUsername = 'user';
-const validPassword = 'pass';
 
 // authentication middleware
 function requireAuth(req, res, next) {
@@ -97,7 +90,7 @@ app.get('/logout', (req, res) => {
 
 // when a websocket is opened at /shell-ws, spawn a fish shell in a pty
 app.ws('/shell-ws', (ws, req) => {
-	// spawn a fish shell using node-pty, with a pseudo-terminal
+	// spawn a fish shell using node-pty with a pseudo-terminal
 	const shell = spawn('fish', [], {
 		cols: 80,
 		rows: 24,
@@ -119,6 +112,4 @@ app.ws('/shell-ws', (ws, req) => {
 	ws.on('close', () => shell.kill());
 });
 
-app.listen(PORT, () => {
-	console.log('server listening on http://localhost:' + PORT);
-});
+app.listen(PORT, () => console.log('server listening on http://localhost:' + PORT));
