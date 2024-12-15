@@ -93,7 +93,6 @@
             console.log('Char height:', charHeight);
             console.log('Rows calculated:', Math.floor(container.clientHeight / charHeight));
 
-
             // Resize the terminal
             term.resize(cols, rows);
         }
@@ -132,8 +131,9 @@
             if (data.event) {
                 switch (data.event) {
                     case 'exit':
-                        term.write('\r\nConnection closed. Redirecting...\r\n');
-                        setTimeout(() => window.location.pathname = '/login', 2000);
+                        term.write('\r\nConnection closed. Refreshing...\r\n');
+                        ws.close();
+                        setTimeout(() => window.location.reload(), 2000);
                         break;
 
                     default:
