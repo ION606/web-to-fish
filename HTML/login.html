@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TTY Login</title>
+    <style>
+        body {
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #000;
+            /* Black background for terminal feel */
+            color: #00ff00;
+            /* Green text for TTY style */
+            font-family: monospace;
+            font-size: 1rem;
+        }
+
+        .tty-container {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            max-width: 600px;
+            padding: 1rem;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        input {
+            background: transparent;
+            color: #00ff00;
+            border: none;
+            border-bottom: 1px solid #00ff00;
+            font-family: monospace;
+            font-size: 1rem;
+            padding: 0.25rem;
+            outline: none;
+            caret-color: #00ff00;
+        }
+
+        input::placeholder {
+            color: #008000;
+            /* Dim green for placeholder text */
+        }
+
+        input:focus {
+            border-bottom-color: #00ff00;
+        }
+
+        button {
+            display: none;
+            /* TTY doesn't have a visible button */
+        }
+
+        .tty-header {
+            margin-bottom: 1rem;
+        }
+
+        .tty-header h1 {
+            margin: 0;
+            font-size: 1.5rem;
+            color: #00ff00;
+        }
+
+        .tty-message {
+            margin-bottom: 0.5rem;
+        }
+
+        .tty-footer {
+            margin-top: 1rem;
+            font-size: 0.85rem;
+            color: #008000;
+            /* Dim green for footer */
+        }
+
+        .error-message {
+            color: red;
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="tty-container">
+        <div class="tty-header">
+            <h1>TTY Login</h1>
+        </div>
+        <form id="loginForm">
+            <div class="tty-message">login:</div>
+            <input name="username" type="text" placeholder="Enter username" required autocomplete="off" />
+            <div class="tty-message">password:</div>
+            <input name="password" type="password" placeholder="Enter password" required />
+            <button type="submit">Login</button>
+            <div class="error-message" id="errorMessage"></div>
+        </form>
+        <div class="tty-footer">
+            Type your credentials and press <kbd>Enter</kbd>.
+        </div>
+    </div>
+
+    <script>
+        const form = document.querySelector('#loginForm');
+        const errorMessage = document.querySelector('#errorMessage');
+
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault(); // Prevent form from submitting the traditional way
+            errorMessage.textContent = ''; // Clear previous error message
+
+            const formData = new FormData(form);
+            const payload = {
+                username: formData.get('username'),
+                password: formData.get('password')
+            };
+
+            try {
+                const response = await fetch('login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (response.status === 404) {
+                    errorMessage.textContent = 'User not found.';
+                } else if (response.status === 401) {
+                    errorMessage.textContent = 'Incorrect password.';
+                } else if (response.status === 500) {
+                    errorMessage.textContent = 'Error logging in. Please try again later.';
+                } else if (response.ok) {
+                    window.location.href = '/shell';
+                } else {
+                    errorMessage.textContent = 'Unexpected error occurred.';
+                }
+            } catch (err) {
+                console.error(err);
+                errorMessage.textContent = 'Unable to connect to the server. Please try again later.';
+            }
+        });
+    </script>
+</body>
+
+</html>

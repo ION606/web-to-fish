@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shell</title>
+    <style>
+        body {
+            font-family: monospace;
+            background: #000000;
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            padding: 0;
+        }
+
+        .terminal-container {
+            background: #000000;
+            border-radius: 5px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 1rem;
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
+        .terminal-header {
+            font-size: 1.5rem;
+            text-transform: uppercase;
+            color: #00ff00;
+            margin: 0;
+        }
+
+        .output {
+            flex-grow: 1;
+            width: 100%;
+            overflow: hidden;
+            /* border: 1px solid #444; */
+            background: #000000;
+            border-radius: 5px;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* For scrollbars */
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #555;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #777;
+        }
+    </style>
+
+    <link rel="stylesheet" href="node_modules/@xterm/xterm/css/xterm.css" />
+    <script src="node_modules/@xterm/xterm/lib/xterm.js"></script>
+    <script src="node_modules/@xterm/addon-fit/lib/addon-fit.js"></script>
+</head>
+
+<body>
+    <div class="terminal-container">
+        <div class="output" id="output"></div>
+    </div>
+
+    <script>
+        function fitTerminalToScreen(term) {
+            const container = document.querySelector('#output'); // terminal container
+            const charWidth = term._core._renderService.dimensions.actualCellWidth;
+            const charHeight = term._core._renderService.dimensions.actualCellHeight;
+
+            console.log(term);
+            if (!charWidth || !charHeight) return;
+
+            // Calculate the number of columns and rows
+            const cols = Math.floor(container.offsetWidth / charWidth);
+            const rows = Math.floor(container.offsetHeight / charHeight);
+
+            console.log('Container height:', container.clientHeight);
+            console.log('Char height:', charHeight);
+            console.log('Rows calculated:', Math.floor(container.clientHeight / charHeight));
+
+
+            // Resize the terminal
+            term.resize(cols, rows);
+        }
+    </script>
+
+    <script>
+        // create terminal instance
+        const term = new Terminal({
+            // cols: 800,
+            // rows: 24,
+            cursorBlink: true,
+            theme: {
+                background: '#000000',
+                foreground: '#ffffff',
+                cursor: '#00ff00',
+            }
+        });
+
+        // mount terminal
+        const outputContainer = document.querySelector('#output');
+        term.open(outputContainer);
+
+        // create websocket connection
+        const protocol = location.protocol === 'https:' ? 'wss://' : 'ws://';
+        const ws = new WebSocket(`${protocol}${location.host}/shell-ws`);
+
+        // handle terminal input and send to websocket
+        term.onData(data => {
+            ws.send(data);
+        });
+
+        // handle incoming websocket messages and write to terminal
+        ws.addEventListener('message', event => {
+            const data = JSON.parse(event.data);
+
+            if (data.event) {
+                switch (data.event) {
+                    case 'exit':
+                        term.write('\r\nConnection closed. Redirecting...\r\n');
+                        setTimeout(() => window.location.pathname = '/login', 2000);
+                        break;
+
+                    default:
+                        console.error(`Unknown event: ${data.event}`);
+                        term.write(`\r\nUnknown event: ${data.event}\r\n`);
+                        break;
+                }
+            } else {
+                term.write(data.data);
+            }
+        });
+
+        // handle websocket closure
+        ws.addEventListener('close', event => {
+            term.write(`\r\nConnection closed with code ${event.code}\r\n`);
+        });
+
+        // handle websocket errors
+        ws.addEventListener('error', () => {
+            term.write('\r\nConnection error. Please try again later.\r\n');
+        });
+
+        window.addEventListener('resize', () => {
+            document.querySelector('.xterm-screen').style.width = `${window.innerWidth}px`;
+            document.querySelector('.xterm-screen').style.height = `${window.innerHeight}px`;
+        })
+
+        const fitAddon = new FitAddon.FitAddon();
+        term.loadAddon(fitAddon);
+        fitAddon.fit();
+    </script>
+</body>
+
+</html>
