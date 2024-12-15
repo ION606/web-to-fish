@@ -19,7 +19,7 @@ app.use('/node_modules', express.static('node_modules'));
 
 
 // shell interface
-app.get('/shell', (req, res) => {
+app.get('/', (req, res) => {
 	res.sendFile('shell.html', { root: path.join(__dirname, 'HTML') });
 });
 
@@ -49,7 +49,7 @@ app.ws('/shell-ws', (ws, req) => {
 });
 
 
-app.get('/', (req, res) => res.end());
+app.get('*', (req, res) => res.end());
 
 
 app.listen(PORT, '0.0.0.0', () => console.log('server listening on http://localhost:' + PORT));
