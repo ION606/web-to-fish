@@ -68,7 +68,8 @@ app.post('/login', (req, res) => {
 				res.redirect('/shell');
 				shell.kill();
 			}
-			else console.error(`unknown terminal output:\n${data}`);
+			else if (data.match(/\[\w+@\w+ \w+\]\$ ?/)) shell.write('fish\n');
+			else console.error(`unknown terminal output:\n"${data}"`);
 		});
 	}
 	catch (err) {
