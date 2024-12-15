@@ -4,7 +4,6 @@ import { fileURLToPath } from 'url';
 import session from 'express-session';
 import expressWs from 'express-ws';
 import { spawn } from 'node-pty';
-import linuxpam from 'node-linux-pam';
 import json from './secrets/config.json' with { type: 'json' };
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url)),
@@ -53,22 +52,15 @@ app.post('/login', async (req, res) => {
 		if (!username) return res.status(400).send('Username is required');
 		if (!password) return res.status(400).send('Password is required');
 
-		// authenticate using PAM
-		linuxpam.pamAuthenticate({
-			username,
-			password,
-			serviceName: 'login',
-		}, (err, success) => {
-			console.log(err);
-			if (err.message.includes('User not known')) res.sendStatus(404);
-			else if (err.message.includes('Authentication failure')) res.sendStatus(401);
-			else if (success) {
-				req.session.authenticated = true;
-				req.session.username = username;
-				return res.redirect('/shell');
-			}
-			else console.error("what?", err, success);
-		});
+		const { uname, upass } = json;
+
+		if (username !== uname) return res.sendStatus(404);
+		else if (password !== upass) return res.sendStatus(401);
+
+		req.session.authenticated = true;
+		req.session.username = username;
+
+		return res.redirect('/shell');
 	} catch (err) {
 		console.error(err);
 		res.status(500).send('Internal server error');
